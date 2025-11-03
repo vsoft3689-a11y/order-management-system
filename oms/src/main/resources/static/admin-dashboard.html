@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - OMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: 700;
+        }
+        .sidebar {
+            background: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            width: 250px;
+        }
+        .sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background: #34495e;
+            border-left-color: #3498db;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white mb-0">
+                <i class="fas fa-shopping-bag me-2"></i>OMS Admin
+            </h4>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link active" href="/admin-dashboard.html">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            <a class="nav-link" href="/admin-products.html">
+                <i class="fas fa-box me-2"></i>Products
+            </a>
+            <a class="nav-link" href="/admin-orders.html">
+                <i class="fas fa-shopping-cart me-2"></i>Orders
+            </a>
+            <a class="nav-link" href="/admin-users.html">
+                <i class="fas fa-users me-2"></i>Users
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+            <div class="container-fluid">
+                <h4 class="mb-0">
+                    <i class="fas fa-tachometer-alt text-primary me-2"></i>Dashboard
+                </h4>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span id="userName">Loading...</span>
+                    </span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 id="welcomeMessage">Welcome to Admin Dashboard</h2>
+                    <p class="mb-0" id="dashboardSummary">Manage your orders, products, and users efficiently</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group">
+                        <button class="btn btn-light" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-light" onclick="viewProducts()">
+                            <i class="fas fa-plus"></i> Add Product
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Total Products</h6>
+                                <h2 class="text-primary" id="totalProducts">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-box fa-2x text-primary opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Total Orders</h6>
+                                <h2 class="text-success" id="totalOrders">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-shopping-cart fa-2x text-success opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Total Users</h6>
+                                <h2 class="text-info" id="totalUsers">0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x text-info opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stat-card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Revenue</h6>
+                                <h2 class="text-warning" id="totalRevenue">$0</h2>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-dollar-sign fa-2x text-warning opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history text-primary me-2"></i>Recent Orders
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingSpinner" class="text-center py-5">
+                            <div class="loading-spinner mb-3"></div>
+                            <p>Loading dashboard data...</p>
+                        </div>
+                        <div id="recentOrders" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentOrdersTable">
+                                        <!-- Orders will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API Base URL
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Authentication functions
+        function checkAuthentication() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.id) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update user info in navbar
+            document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+            
+            return true;
+        }
+
+        function getCurrentUserInfo() {
+            return JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear user data from storage
+                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
+                
+                // Show logout message
+                alert('You have been logged out successfully.');
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Check authentication
+        if (!checkAuthentication()) {
+            // Will redirect to login if not authenticated
+        }
+
+        // Update user info
+        const currentUser = getCurrentUserInfo();
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${currentUser.name}!`;
+        }
+
+        // API Service
+        class ApiService {
+            static async getProducts() {
+                try {
+                    const response = await fetch(`${API_BASE}/products`);
+                    if (!response.ok) throw new Error('Failed to fetch products');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    return [];
+                }
+            }
+
+            static async getOrders() {
+                try {
+                    const response = await fetch(`${API_BASE}/orders`);
+                    if (!response.ok) throw new Error('Failed to fetch orders');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                    return [];
+                }
+            }
+
+            static async getUsers() {
+                try {
+                    const response = await fetch(`${API_BASE}/users`);
+                    if (!response.ok) throw new Error('Failed to fetch users');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching users:', error);
+                    return [];
+                }
+            }
+        }
+
+        class AdminDashboard {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                await this.loadDashboardData();
+            }
+
+            async loadDashboardData() {
+                try {
+                    this.showLoading();
+                    
+                    // Load all data in parallel
+                    const [products, orders, users] = await Promise.all([
+                        this.fetchProducts(),
+                        this.fetchOrders(),
+                        this.fetchUsers()
+                    ]);
+
+                    this.updateStats(products, orders, users);
+                    this.updateRecentOrders(orders);
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('Error loading dashboard data:', error);
+                    this.showError('Failed to load dashboard data');
+                    this.hideLoading();
+                }
+            }
+
+            async fetchProducts() {
+                try {
+                    return await ApiService.getProducts();
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    return [];
+                }
+            }
+
+            async fetchOrders() {
+                try {
+                    return await ApiService.getOrders();
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                    return [];
+                }
+            }
+
+            async fetchUsers() {
+                try {
+                    return await ApiService.getUsers();
+                } catch (error) {
+                    console.error('Error fetching users:', error);
+                    return [];
+                }
+            }
+
+            updateStats(products, orders, users) {
+                document.getElementById('totalProducts').textContent = products.length;
+                document.getElementById('totalOrders').textContent = orders.length;
+                document.getElementById('totalUsers').textContent = users.length;
+                
+                const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+                document.getElementById('totalRevenue').textContent = `$${totalRevenue.toFixed(2)}`;
+            }
+
+            updateRecentOrders(orders) {
+                const tbody = document.getElementById('recentOrdersTable');
+                const recentOrders = orders.slice(0, 5); // Get last 5 orders
+
+                if (recentOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No orders found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = recentOrders.map(order => `
+                    <tr>
+                        <td>#${order.orderId}</td>
+                        <td>User #${order.userId}</td>
+                        <td>$${order.totalAmount.toFixed(2)}</td>
+                        <td>
+                            <span class="badge ${this.getStatusBadgeClass(order.status)}">
+                                ${order.status}
+                            </span>
+                        </td>
+                        <td>${this.formatDate(order.orderDate)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            getStatusBadgeClass(status) {
+                const statusMap = {
+                    'Delivered': 'bg-success',
+                    'Shipped': 'bg-warning',
+                    'Pending': 'bg-secondary',
+                    'Cancelled': 'bg-danger'
+                };
+                return statusMap[status] || 'bg-secondary';
+            }
+
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            showLoading() {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                document.getElementById('recentOrders').style.display = 'none';
+            }
+
+            hideLoading() {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('recentOrders').style.display = 'block';
+            }
+
+            showError(message) {
+                alert(message);
+            }
+        }
+
+        // Global functions
+        function refreshData() {
+            const dashboard = new AdminDashboard();
+            dashboard.loadDashboardData();
+        }
+
+        function viewProducts() {
+            window.location.href = '/admin-products.html';
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            new AdminDashboard();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - OMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            background: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            width: 250px;
+        }
+        .sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background: #34495e;
+            border-left-color: #3498db;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .tracking-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .tracking-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem;
+        }
+        .tracking-timeline {
+            position: relative;
+            padding: 2rem;
+        }
+        .tracking-timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+        .timeline-step {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 60px;
+        }
+        .timeline-step:last-child {
+            margin-bottom: 0;
+        }
+        .timeline-icon {
+            position: absolute;
+            left: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: white;
+            border: 3px solid #e9ecef;
+            z-index: 2;
+        }
+        .timeline-step.active .timeline-icon {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .timeline-step.completed .timeline-icon {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .order-status-badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .order-details-card {
+            border-left: 4px solid #007bff;
+        }
+        .track-order-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            font-weight: 600;
+        }
+        .estimated-delivery {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white mb-0">
+                <i class="fas fa-shopping-bag me-2"></i>OMS Customer
+            </h4>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="customer-dashboard.html">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            <a class="nav-link" href="customer-products.html">
+                <i class="fas fa-box me-2"></i>Products
+            </a>
+            <a class="nav-link" href="customer-orders.html">
+                <i class="fas fa-shopping-cart me-2"></i>My Orders
+            </a>
+            <a class="nav-link active" href="customer-track-order.html">
+                <i class="fas fa-truck me-2"></i>Track Order
+            </a>
+            <a class="nav-link" href="customer-profile.html">
+                <i class="fas fa-user me-2"></i>Profile
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+            <div class="container-fluid">
+                <h4 class="mb-0">
+                    <i class="fas fa-truck text-primary me-2"></i>Track Your Order
+                </h4>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span id="userName">Loading...</span>
+                    </span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Search Order Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card tracking-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">
+                            <i class="fas fa-search text-primary me-2"></i>Find Your Order
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" id="orderSearch" class="form-control form-control-lg" 
+                                           placeholder="Enter Order ID (e.g., #1001, #1002)">
+                                    <button class="btn btn-primary btn-lg" onclick="searchOrder()">
+                                        <i class="fas fa-search me-2"></i>Track Order
+                                    </button>
+                                </div>
+                                <div class="form-text mt-2">
+                                    Enter your Order ID to track its current status and delivery progress.
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100 h-100" onclick="loadRecentOrders()">
+                                    <i class="fas fa-history me-2"></i>Show Recent Orders
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders Section -->
+        <div class="row mb-4" id="recentOrdersSection" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock text-warning me-2"></i>Your Recent Orders
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentOrdersList" class="row">
+                            <!-- Recent orders will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Tracking Section -->
+        <div id="orderTrackingSection" style="display: none;">
+            <!-- Order Details -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card order-details-card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Order Details</h5>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Order ID:</strong></td>
+                                            <td id="trackOrderId">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Order Date:</strong></td>
+                                            <td id="trackOrderDate">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Amount:</strong></td>
+                                            <td id="trackOrderAmount">-</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Shipping Address:</strong></td>
+                                            <td id="trackShippingAddress">-</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Current Status</h5>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="order-status-badge badge bg-success me-3" id="trackOrderStatus">-</span>
+                                        <span class="text-muted" id="trackLastUpdate">-</span>
+                                    </div>
+                                    <div class="estimated-delivery">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-shipping-fast me-2"></i>Estimated Delivery
+                                        </h6>
+                                        <p class="mb-0" id="estimatedDeliveryDate">Calculating...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Timeline -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card tracking-card">
+                        <div class="tracking-header">
+                            <h4 class="mb-0">
+                                <i class="fas fa-map-marker-alt me-2"></i>Order Tracking
+                            </h4>
+                            <p class="mb-0">Follow your order's journey to your doorstep</p>
+                        </div>
+                        <div class="tracking-timeline" id="trackingTimeline">
+                            <!-- Tracking steps will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-boxes me-2"></i>Order Items
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="orderItemsList">
+                                <!-- Order items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-5" style="display: none;">
+            <div class="loading-spinner mb-3"></div>
+            <p>Tracking your order...</p>
+        </div>
+
+        <!-- No Order Found -->
+        <div id="noOrderFound" class="text-center py-5" style="display: none;">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Order Not Found</h5>
+            <p class="text-muted">We couldn't find an order with that ID. Please check your Order ID and try again.</p>
+            <button class="btn btn-primary" onclick="loadRecentOrders()">
+                <i class="fas fa-history me-2"></i>View Recent Orders
+            </button>
+        </div>
+
+        <!-- No Recent Orders -->
+        <div id="noRecentOrders" class="text-center py-5" style="display: none;">
+            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Recent Orders</h5>
+            <p class="text-muted">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+            <a href="customer-products.html" class="btn btn-primary">
+                <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API Service for Customer
+        class CustomerApiService {
+            static baseUrl = 'http://localhost:8080/api';
+
+            static async request(endpoint, options = {}) {
+                const url = `${this.baseUrl}${endpoint}`;
+                
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    },
+                    ...options
+                };
+
+                try {
+                    const response = await fetch(url, config);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    console.error('API request failed:', error);
+                    throw error;
+                }
+            }
+
+            // Order methods
+            static async getCustomerOrders(userId) {
+                return await this.request(`/orders/user/${userId}`);
+            }
+
+            static async getOrderById(orderId) {
+                return await this.request(`/orders/${orderId}`);
+            }
+
+            static async getOrderTracking(orderId) {
+                return await this.request(`/orders/${orderId}/tracking`);
+            }
+        }
+
+        // Authentication functions
+        function checkAuthentication() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.id) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update user info in navbar
+            document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+            
+            return true;
+        }
+
+        function getCurrentUserInfo() {
+            return JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear user data from storage
+                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
+                
+                // Show logout message
+                alert('You have been logged out successfully.');
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Order Tracking Manager
+        class OrderTrackingManager {
+            constructor() {
+                this.currentUser = getCurrentUserInfo();
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                // Auto-load recent orders on page load
+                await this.loadRecentOrders();
+            }
+
+            setupEventListeners() {
+                // Enter key support for order search
+                document.getElementById('orderSearch').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.searchOrder();
+                    }
+                });
+            }
+
+            async searchOrder() {
+                const orderIdInput = document.getElementById('orderSearch').value.trim();
+                if (!orderIdInput) {
+                    alert('Please enter an Order ID');
+                    return;
+                }
+
+                // Extract numeric order ID (remove # if present)
+                const orderId = orderIdInput.replace('#', '');
+                
+                this.showLoading();
+                this.hideAllSections();
+
+                try {
+                    // Try API first
+                    const order = await CustomerApiService.getOrderById(orderId);
+                    if (order && order.userId === this.currentUser.id) {
+                        await this.displayOrderTracking(order);
+                    } else {
+                        // Try local storage as fallback
+                        await this.tryLocalStorageOrder(orderId);
+                    }
+                } catch (error) {
+                    console.error('Error searching order:', error);
+                    await this.tryLocalStorageOrder(orderId);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            async tryLocalStorageOrder(orderId) {
+                try {
+                    const localOrders = JSON.parse(localStorage.getItem('oms_orders')) || [];
+                    const order = localOrders.find(o => 
+                        o.orderId == orderId || o.id == orderId
+                    );
+                    
+                    if (order && order.userId === this.currentUser.id) {
+                        await this.displayOrderTracking(order);
+                    } else {
+                        this.showNoOrderFound();
+                    }
+                } catch (error) {
+                    console.error('Error checking local orders:', error);
+                    this.showNoOrderFound();
+                }
+            }
+
+            async loadRecentOrders() {
+                this.showLoading();
+                this.hideAllSections();
+
+                try {
+                    // Try API first
+                    const orders = await CustomerApiService.getCustomerOrders(this.currentUser.id);
+                    if (orders && orders.length > 0) {
+                        this.displayRecentOrders(orders.slice(0, 5)); // Show last 5 orders
+                    } else {
+                        // Try local storage as fallback
+                        await this.loadLocalRecentOrders();
+                    }
+                } catch (error) {
+                    console.error('Error loading recent orders:', error);
+                    await this.loadLocalRecentOrders();
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            async loadLocalRecentOrders() {
+                try {
+                    const localOrders = JSON.parse(localStorage.getItem('oms_orders')) || [];
+                    const userOrders = localOrders.filter(o => o.userId === this.currentUser.id);
+                    
+                    if (userOrders.length > 0) {
+                        // Sort by date (newest first)
+                        userOrders.sort((a, b) => new Date(b.orderDate || b.createdAt) - new Date(a.orderDate || a.createdAt));
+                        this.displayRecentOrders(userOrders.slice(0, 5));
+                    } else {
+                        this.showNoRecentOrders();
+                    }
+                } catch (error) {
+                    console.error('Error loading local orders:', error);
+                    this.showNoRecentOrders();
+                }
+            }
+
+            displayRecentOrders(orders) {
+                const container = document.getElementById('recentOrdersList');
+                const section = document.getElementById('recentOrdersSection');
+                
+                container.innerHTML = orders.map(order => `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">Order #${order.orderId || order.id}</h6>
+                                <p class="card-text text-muted small">
+                                    ${order.productName || 'Multiple Items'}<br>
+                                    $${order.totalAmount?.toFixed(2) || '0.00'}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge ${this.getStatusBadgeClass(order.status)}">
+                                        ${order.status || 'PENDING'}
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="trackOrder(${order.orderId || order.id})">
+                                        <i class="fas fa-truck me-1"></i>Track
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                section.style.display = 'block';
+            }
+
+            async displayOrderTracking(order) {
+                // Update order details
+                document.getElementById('trackOrderId').textContent = `#${order.orderId || order.id}`;
+                document.getElementById('trackOrderDate').textContent = this.formatDate(order.orderDate || order.createdAt);
+                document.getElementById('trackOrderAmount').textContent = `$${order.totalAmount?.toFixed(2) || '0.00'}`;
+                document.getElementById('trackShippingAddress').textContent = order.shippingAddress || 'Not specified';
+                document.getElementById('trackOrderStatus').textContent = order.status || 'PENDING';
+                document.getElementById('trackOrderStatus').className = `order-status-badge badge ${this.getStatusBadgeClass(order.status)}`;
+                document.getElementById('trackLastUpdate').textContent = `Last updated: ${this.formatDateTime(new Date().toISOString())}`;
+                
+                // Calculate estimated delivery
+                this.calculateEstimatedDelivery(order);
+                
+                // Display tracking timeline
+                this.displayTrackingTimeline(order);
+                
+                // Display order items
+                this.displayOrderItems(order);
+                
+                // Show tracking section
+                document.getElementById('orderTrackingSection').style.display = 'block';
+            }
+
+            displayTrackingTimeline(order) {
+                const timeline = document.getElementById('trackingTimeline');
+                const status = order.status || 'PENDING';
+                
+                const trackingSteps = [
+                    { 
+                        id: 'ordered', 
+                        title: 'Order Placed', 
+                        description: 'Your order has been received and confirmed.',
+                        icon: 'fa-shopping-cart',
+                        status: 'completed'
+                    },
+                    { 
+                        id: 'confirmed', 
+                        title: 'Order Confirmed', 
+                        description: 'We are preparing your order for shipment.',
+                        icon: 'fa-check-circle',
+                        status: status === 'PENDING' ? 'active' : 'completed'
+                    },
+                    { 
+                        id: 'shipped', 
+                        title: 'Shipped', 
+                        description: 'Your order has been shipped and is on its way.',
+                        icon: 'fa-shipping-fast',
+                        status: status === 'SHIPPED' || status === 'DELIVERED' ? 'completed' : 
+                               status === 'OUT_FOR_DELIVERY' ? 'completed' : 'pending'
+                    },
+                    { 
+                        id: 'out_for_delivery', 
+                        title: 'Out for Delivery', 
+                        description: 'Your order is out for delivery today.',
+                        icon: 'fa-truck',
+                        status: status === 'OUT_FOR_DELIVERY' ? 'active' : 
+                               status === 'DELIVERED' ? 'completed' : 'pending'
+                    },
+                    { 
+                        id: 'delivered', 
+                        title: 'Delivered', 
+                        description: 'Your order has been delivered successfully.',
+                        icon: 'fa-home',
+                        status: status === 'DELIVERED' ? 'completed' : 'pending'
+                    }
+                ];
+
+                timeline.innerHTML = trackingSteps.map(step => `
+                    <div class="timeline-step ${step.status}">
+                        <div class="timeline-icon">
+                            <i class="fas ${step.icon}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">${step.title}</h6>
+                            <p class="text-muted mb-0">${step.description}</p>
+                            <small class="text-muted">${this.getStepTimestamp(step.id, order)}</small>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            displayOrderItems(order) {
+                const container = document.getElementById('orderItemsList');
+                
+                if (order.items && order.items.length > 0) {
+                    container.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${order.items.map(item => `
+                                        <tr>
+                                            <td>${item.productName}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>$${item.price?.toFixed(2)}</td>
+                                            <td>$${(item.quantity * item.price)?.toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    // Single item order
+                    container.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>${order.productName || 'Product'}</td>
+                                        <td>${order.quantity || 1}</td>
+                                        <td>$${(order.totalAmount / (order.quantity || 1))?.toFixed(2)}</td>
+                                        <td>$${order.totalAmount?.toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            }
+
+            calculateEstimatedDelivery(order) {
+                const orderDate = new Date(order.orderDate || order.createdAt);
+                const estimatedDate = new Date(orderDate);
+                
+                // Add days based on status
+                if (order.status === 'PENDING') {
+                    estimatedDate.setDate(estimatedDate.getDate() + 5); // 5 days for processing + shipping
+                } else if (order.status === 'SHIPPED') {
+                    estimatedDate.setDate(estimatedDate.getDate() + 3); // 3 days for delivery
+                } else if (order.status === 'OUT_FOR_DELIVERY') {
+                    estimatedDate.setDate(estimatedDate.getDate() + 1); // 1 day for delivery
+                } else if (order.status === 'DELIVERED') {
+                    estimatedDate.setDate(estimatedDate.getDate()); // Already delivered
+                }
+                
+                document.getElementById('estimatedDeliveryDate').textContent = 
+                    order.status === 'DELIVERED' 
+                    ? `Delivered on ${this.formatDate(orderDate)}`
+                    : `Expected by ${this.formatDate(estimatedDate)}`;
+            }
+
+            getStepTimestamp(stepId, order) {
+                const orderDate = new Date(order.orderDate || order.createdAt);
+                const timestamps = {
+                    'ordered': orderDate,
+                    'confirmed': new Date(orderDate.getTime() + 2 * 60 * 60 * 1000), // +2 hours
+                    'shipped': new Date(orderDate.getTime() + 24 * 60 * 60 * 1000), // +1 day
+                    'out_for_delivery': new Date(orderDate.getTime() + 3 * 24 * 60 * 60 * 1000), // +3 days
+                    'delivered': order.status === 'DELIVERED' ? new Date(orderDate.getTime() + 4 * 24 * 60 * 60 * 1000) : null
+                };
+
+                const timestamp = timestamps[stepId];
+                return timestamp ? this.formatDateTime(timestamp) : 'Pending';
+            }
+
+            getStatusBadgeClass(status) {
+                const statusMap = {
+                    'PENDING': 'bg-warning',
+                    'CONFIRMED': 'bg-info',
+                    'SHIPPED': 'bg-primary',
+                    'OUT_FOR_DELIVERY': 'bg-warning text-dark',
+                    'DELIVERED': 'bg-success',
+                    'CANCELLED': 'bg-danger'
+                };
+                return statusMap[status] || 'bg-secondary';
+            }
+
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+
+            formatDateTime(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            showLoading() {
+                document.getElementById('loadingState').style.display = 'block';
+            }
+
+            hideLoading() {
+                document.getElementById('loadingState').style.display = 'none';
+            }
+
+            hideAllSections() {
+                document.getElementById('orderTrackingSection').style.display = 'none';
+                document.getElementById('recentOrdersSection').style.display = 'none';
+                document.getElementById('noOrderFound').style.display = 'none';
+                document.getElementById('noRecentOrders').style.display = 'none';
+            }
+
+            showNoOrderFound() {
+                document.getElementById('noOrderFound').style.display = 'block';
+            }
+
+            showNoRecentOrders() {
+                document.getElementById('noRecentOrders').style.display = 'block';
+            }
+        }
+
+        // Global functions
+        let orderTracker;
+
+        function searchOrder() {
+            orderTracker.searchOrder();
+        }
+
+        function loadRecentOrders() {
+            orderTracker.loadRecentOrders();
+        }
+
+        function trackOrder(orderId) {
+            document.getElementById('orderSearch').value = `#${orderId}`;
+            orderTracker.searchOrder();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuthentication()) {
+                return;
+            }
+            orderTracker = new OrderTrackingManager();
+        });
+    </script>
+</body>
+</html>

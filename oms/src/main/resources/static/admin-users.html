@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - OMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            background: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            width: 250px;
+        }
+        .sidebar .nav-link {
+            color: #bdc3c7;
+            padding: 12px 20px;
+            border-left: 3px solid transparent;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background: #34495e;
+            border-left-color: #3498db;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .login-badge {
+            font-size: 0.7rem;
+            padding: 0.25em 0.6em;
+        }
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white mb-0">
+                <i class="fas fa-shopping-bag me-2"></i>OMS Admin
+            </h4>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="admin-dashboard.html">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            <a class="nav-link" href="admin-products.html">
+                <i class="fas fa-box me-2"></i>Products
+            </a>
+            <a class="nav-link" href="admin-orders.html">
+                <i class="fas fa-shopping-cart me-2"></i>Orders
+            </a>
+            <a class="nav-link active" href="admin-users.html">
+                <i class="fas fa-users me-2"></i>Users
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+            <div class="container-fluid">
+                <h4 class="mb-0">
+                    <i class="fas fa-users text-primary me-2"></i>User Management
+                </h4>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text me-3">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span id="userName">Loading...</span>
+                    </span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- User Statistics -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-primary stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Total Users</h6>
+                                <h2 class="text-primary" id="totalUsers">0</h2>
+                                <small class="text-muted" id="totalLoginInfo">0 logins today</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x text-primary opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-success stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Customers</h6>
+                                <h2 class="text-success" id="totalCustomers">0</h2>
+                                <small class="text-muted" id="customerLoginInfo">0 logins today</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-user fa-2x text-success opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-warning stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Admins</h6>
+                                <h2 class="text-warning" id="totalAdmins">0</h2>
+                                <small class="text-muted" id="adminLoginInfo">0 logins today</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-user-shield fa-2x text-warning opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-info stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title text-muted">Active Today</h6>
+                                <h2 class="text-info" id="activeToday">0</h2>
+                                <small class="text-muted" id="activeLoginInfo">Currently online</small>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-user-check fa-2x text-info opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Activity Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line text-success me-2"></i>Today's Login Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3 mb-3">
+                                <div class="border-end">
+                                    <h3 class="text-primary" id="totalLoginsToday">0</h3>
+                                    <small class="text-muted">Total Logins Today</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="border-end">
+                                    <h3 class="text-success" id="customerLoginsToday">0</h3>
+                                    <small class="text-muted">Customer Logins</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="border-end">
+                                    <h3 class="text-warning" id="adminLoginsToday">0</h3>
+                                    <small class="text-muted">Admin Logins</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <h3 class="text-info" id="newRegistrationsToday">0</h3>
+                                <small class="text-muted">New Registrations</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">All Users</h5>
+                    <div class="d-flex">
+                        <input type="text" id="searchUsers" class="form-control me-2" placeholder="Search users...">
+                        <button class="btn btn-outline-secondary" onclick="refreshUsers()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loadingSpinner" class="text-center py-5">
+                    <div class="loading-spinner mb-3"></div>
+                    <p>Loading users...</p>
+                </div>
+                <div id="usersTable" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Last Login</th>
+                                    <th>Login Count</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="noUsersMessage" class="text-center py-5" style="display: none;">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Users Found</h5>
+                    <p class="text-muted">There are no users to display.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API Base URL
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Authentication functions
+        function checkAuthentication() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.id) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            // Update user info in navbar
+            document.getElementById('userName').textContent = currentUser.name || currentUser.email;
+            
+            return true;
+        }
+
+        function getCurrentUserInfo() {
+            return JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear user data from storage
+                localStorage.removeItem('currentUser');
+                sessionStorage.removeItem('currentUser');
+                
+                // Show logout message
+                alert('You have been logged out successfully.');
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+            }
+        }
+
+        // API Service
+        class ApiService {
+            static async getUsers() {
+                try {
+                    const response = await fetch(`${API_BASE}/users`);
+                    if (!response.ok) throw new Error('Failed to fetch users');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching users:', error);
+                    // Return mock data if API fails
+                    return this.getMockUsers();
+                }
+            }
+
+            static getMockUsers() {
+                // Get users from localStorage (registered users)
+                const localUsers = JSON.parse(localStorage.getItem('oms_users')) || [];
+                
+                // Convert local users to match API format
+                const convertedUsers = localUsers.map(user => ({
+                    userId: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role || 'CUSTOMER',
+                    createdAt: user.createdAt,
+                    lastLogin: user.lastLogin || null,
+                    loginCount: user.loginCount || 0,
+                    isOnline: user.isOnline || false
+                }));
+
+                // Add predefined users
+                const predefinedUsers = [
+                    {
+                        userId: 1,
+                        name: "System Administrator",
+                        email: "admin@oms.com",
+                        role: "ADMIN",
+                        createdAt: "2025-10-30T10:07:28.568518",
+                        lastLogin: new Date().toISOString(),
+                        loginCount: 15,
+                        isOnline: true
+                    },
+                    {
+                        userId: 2,
+                        name: "John Doe",
+                        email: "customer@oms.com",
+                        role: "CUSTOMER",
+                        createdAt: "2025-10-30T10:07:28.630635",
+                        lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                        loginCount: 8,
+                        isOnline: false
+                    }
+                ];
+
+                return [...predefinedUsers, ...convertedUsers];
+            }
+
+            static async getUserById(userId) {
+                try {
+                    const response = await fetch(`${API_BASE}/users/${userId}`);
+                    if (!response.ok) throw new Error('Failed to fetch user');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching user:', error);
+                    // Return from mock data
+                    const users = this.getMockUsers();
+                    return users.find(u => u.userId == userId) || null;
+                }
+            }
+
+            static async deleteUser(userId) {
+                try {
+                    const response = await fetch(`${API_BASE}/users/${userId}`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error('Failed to delete user');
+                    return true;
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    // Delete from localStorage if API fails
+                    this.deleteLocalUser(userId);
+                    return true;
+                }
+            }
+
+            static deleteLocalUser(userId) {
+                const localUsers = JSON.parse(localStorage.getItem('oms_users')) || [];
+                const updatedUsers = localUsers.filter(u => u.id != userId);
+                localStorage.setItem('oms_users', JSON.stringify(updatedUsers));
+            }
+        }
+
+        // Check authentication
+        if (!checkAuthentication()) {
+            // Will redirect to login if not authenticated
+        }
+
+        // Update user info
+        const currentUser = getCurrentUserInfo();
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.name;
+        }
+
+        class UserManager {
+            constructor() {
+                this.users = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadUsers();
+                this.setupEventListeners();
+            }
+
+            async loadUsers() {
+                try {
+                    this.showLoading();
+                    this.users = await ApiService.getUsers();
+                    this.renderUsers();
+                    this.updateStats();
+                    this.updateLoginActivity();
+                    this.hideLoading();
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                    this.showError('Failed to load users');
+                    this.hideLoading();
+                }
+            }
+
+            renderUsers() {
+                const tbody = document.getElementById('usersTableBody');
+                const tableDiv = document.getElementById('usersTable');
+                const noUsersDiv = document.getElementById('noUsersMessage');
+
+                if (this.users.length === 0) {
+                    tableDiv.style.display = 'none';
+                    noUsersDiv.style.display = 'block';
+                    return;
+                }
+
+                noUsersDiv.style.display = 'none';
+                tableDiv.style.display = 'block';
+
+                tbody.innerHTML = this.users.map(user => `
+                    <tr>
+                        <td>#${user.userId}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <strong>${user.name}</strong>
+                                    ${user.userId === currentUser.id ? '<span class="badge bg-info ms-1 login-badge">You</span>' : ''}
+                                    ${user.isOnline ? '<span class="badge bg-success ms-1 login-badge">Online</span>' : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="badge ${this.getRoleBadgeClass(user.role)}">
+                                <i class="fas ${user.role === 'ADMIN' ? 'fa-user-shield' : 'fa-user'} me-1"></i>
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td>
+                            ${user.lastLogin ? this.formatDateTime(user.lastLogin) : 'Never'}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">${user.loginCount || 0}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${user.isOnline ? 'bg-success' : 'bg-secondary'}">
+                                ${user.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-info" onclick="viewUserDetails(${user.userId})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                ${user.role === 'CUSTOMER' && user.userId !== currentUser.id ? `
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.userId})" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-sm btn-outline-secondary" disabled title="Protected Account">
+                                        <i class="fas fa-lock"></i>
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            updateStats() {
+                const totalUsers = this.users.length;
+                const totalCustomers = this.users.filter(u => u.role === 'CUSTOMER').length;
+                const totalAdmins = this.users.filter(u => u.role === 'ADMIN').length;
+                const activeToday = this.users.filter(u => this.isToday(u.lastLogin)).length;
+
+                document.getElementById('totalUsers').textContent = totalUsers;
+                document.getElementById('totalCustomers').textContent = totalCustomers;
+                document.getElementById('totalAdmins').textContent = totalAdmins;
+                document.getElementById('activeToday').textContent = activeToday;
+
+                // Update login info
+                document.getElementById('totalLoginInfo').textContent = `${this.getTotalLogins()} total logins`;
+                document.getElementById('customerLoginInfo').textContent = `${this.getCustomerLogins()} total logins`;
+                document.getElementById('adminLoginInfo').textContent = `${this.getAdminLogins()} total logins`;
+                document.getElementById('activeLoginInfo').textContent = `${this.getOnlineUsers()} online now`;
+            }
+
+            updateLoginActivity() {
+                const today = new Date().toDateString();
+                const loginsToday = this.users.filter(u => u.lastLogin && new Date(u.lastLogin).toDateString() === today).length;
+                const customerLoginsToday = this.users.filter(u => u.role === 'CUSTOMER' && u.lastLogin && new Date(u.lastLogin).toDateString() === today).length;
+                const adminLoginsToday = this.users.filter(u => u.role === 'ADMIN' && u.lastLogin && new Date(u.lastLogin).toDateString() === today).length;
+                const newRegistrationsToday = this.users.filter(u => new Date(u.createdAt).toDateString() === today).length;
+
+                document.getElementById('totalLoginsToday').textContent = loginsToday;
+                document.getElementById('customerLoginsToday').textContent = customerLoginsToday;
+                document.getElementById('adminLoginsToday').textContent = adminLoginsToday;
+                document.getElementById('newRegistrationsToday').textContent = newRegistrationsToday;
+            }
+
+            getTotalLogins() {
+                return this.users.reduce((total, user) => total + (user.loginCount || 0), 0);
+            }
+
+            getCustomerLogins() {
+                return this.users
+                    .filter(u => u.role === 'CUSTOMER')
+                    .reduce((total, user) => total + (user.loginCount || 0), 0);
+            }
+
+            getAdminLogins() {
+                return this.users
+                    .filter(u => u.role === 'ADMIN')
+                    .reduce((total, user) => total + (user.loginCount || 0), 0);
+            }
+
+            getOnlineUsers() {
+                return this.users.filter(u => u.isOnline).length;
+            }
+
+            isToday(dateString) {
+                if (!dateString) return false;
+                const date = new Date(dateString);
+                const today = new Date();
+                return date.toDateString() === today.toDateString();
+            }
+
+            formatDateTime(dateString) {
+                if (!dateString) return 'Never';
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                
+                return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            getRoleBadgeClass(role) {
+                return role === 'ADMIN' ? 'bg-danger' : 'bg-primary';
+            }
+
+            setupEventListeners() {
+                document.getElementById('searchUsers').addEventListener('input', (e) => {
+                    this.filterUsers(e.target.value);
+                });
+            }
+
+            filterUsers(searchTerm) {
+                const filtered = this.users.filter(user =>
+                    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                this.renderFilteredUsers(filtered);
+            }
+
+            renderFilteredUsers(filteredUsers) {
+                const tbody = document.getElementById('usersTableBody');
+                const tableDiv = document.getElementById('usersTable');
+                const noUsersDiv = document.getElementById('noUsersMessage');
+
+                if (filteredUsers.length === 0) {
+                    tableDiv.style.display = 'none';
+                    noUsersDiv.style.display = 'block';
+                    return;
+                }
+
+                noUsersDiv.style.display = 'none';
+                tableDiv.style.display = 'block';
+
+                tbody.innerHTML = filteredUsers.map(user => `
+                    <tr>
+                        <td>#${user.userId}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <strong>${user.name}</strong>
+                                    ${user.userId === currentUser.id ? '<span class="badge bg-info ms-1 login-badge">You</span>' : ''}
+                                    ${user.isOnline ? '<span class="badge bg-success ms-1 login-badge">Online</span>' : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="badge ${this.getRoleBadgeClass(user.role)}">
+                                <i class="fas ${user.role === 'ADMIN' ? 'fa-user-shield' : 'fa-user'} me-1"></i>
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td>
+                            ${user.lastLogin ? this.formatDateTime(user.lastLogin) : 'Never'}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">${user.loginCount || 0}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${user.isOnline ? 'bg-success' : 'bg-secondary'}">
+                                ${user.isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-info" onclick="viewUserDetails(${user.userId})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                ${user.role === 'CUSTOMER' && user.userId !== currentUser.id ? `
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.userId})" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-sm btn-outline-secondary" disabled title="Protected Account">
+                                        <i class="fas fa-lock"></i>
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            showLoading() {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                document.getElementById('usersTable').style.display = 'none';
+                document.getElementById('noUsersMessage').style.display = 'none';
+            }
+
+            hideLoading() {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+
+            showError(message) {
+                alert(message);
+            }
+        }
+
+        // Global functions
+        let userManager;
+
+        async function viewUserDetails(userId) {
+            try {
+                const user = await ApiService.getUserById(userId);
+                if (user) {
+                    const userDetails = `
+User Details:
+
+Name: ${user.name}
+Email: ${user.email}
+Role: ${user.role}
+User ID: ${user.userId}
+Joined: ${new Date(user.createdAt).toLocaleDateString()}
+
+Last Login: ${user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+Total Logins: ${user.loginCount || 0}
+Status: ${user.isOnline ? 'Online' : 'Offline'}
+
+Account Created: ${new Date(user.createdAt).toLocaleDateString()}
+                    `;
+                    alert(userDetails);
+                }
+            } catch (error) {
+                console.error('Error loading user details:', error);
+                alert('Failed to load user details');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+                try {
+                    await ApiService.deleteUser(userId);
+                    
+                    // Remove from local array
+                    userManager.users = userManager.users.filter(u => u.userId !== userId);
+                    userManager.renderUsers();
+                    userManager.updateStats();
+                    userManager.updateLoginActivity();
+                    
+                    alert('User deleted successfully!');
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert('Failed to delete user');
+                }
+            }
+        }
+
+        function refreshUsers() {
+            userManager.loadUsers();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            userManager = new UserManager();
+        });
+    </script>
+</body>
+</html>
